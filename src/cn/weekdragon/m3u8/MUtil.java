@@ -15,9 +15,10 @@ import cn.weekdragon.m3u8.entity.M3U8;
 import cn.weekdragon.utils.io.FileUtils;
 
 public class MUtil {
+	public static String TEMP_FOLD = "temp";
 	
 	public static boolean downloadM3U8(String m3u8URL) throws Exception {
-		File tfile = TempFile.getTmpFolder("temp");
+		File tfile = TempFile.getTmpFolder(TEMP_FOLD);
 		if (!tfile.exists()) {
 			tfile.mkdirs();
 		}
