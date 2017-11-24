@@ -24,6 +24,9 @@ public abstract class StringUtils {
     private static final String BOOLEAN_TRUE_NUMBER  = "1";
     private static final String BOOLEAN_FALSE_NUMBER = "0";
 
+	public static boolean isEmpty(String str) {
+		return str == null || str.length() == 0 ? true : false;
+	}
     /**
      * 在str右边加入足够多的addStr字符串
      *
