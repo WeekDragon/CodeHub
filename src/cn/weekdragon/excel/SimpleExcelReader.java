@@ -30,7 +30,7 @@ public class SimpleExcelReader implements IExcelReader {
 	}
 
 	@Override
-	public String getCellValue(String colName, boolean check) throws Exception {
+	public Object getCellValue(String colName, boolean check) throws Exception {
 		return reader.getCellValue(colName, check);
 	}
 

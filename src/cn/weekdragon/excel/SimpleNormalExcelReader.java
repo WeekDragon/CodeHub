@@ -3,9 +3,12 @@ package cn.weekdragon.excel;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.Cell;
@@ -67,13 +70,14 @@ public class SimpleNormalExcelReader implements IExcelReader {
 				if (xssfCell == null) {
 					continue;
 				}
-				String colName = formatColName(getValue(xssfCell));
+				String colName = formatColName(getValue(xssfCell).toString());
 				if (!colName.trim().isEmpty()) {
 					isData = true;
 				}
 				colMap.put(colName, cellNum);
 			}
 			if (isData) {
+			    rowIndex++;
 				return true;
 			}
 		}
@@ -100,20 +104,20 @@ public class SimpleNormalExcelReader implements IExcelReader {
 	}
 
 	public boolean next() throws Exception {
-		rowIndex++;
 		if (rowIndex > sheet.getLastRowNum())
 			return false;
 		row = sheet.getRow(rowIndex);
+		rowIndex++;
 		if (row == null)
 			return false;
 		return true;
 	}
 
-	public String getCellValue(String colName) throws Exception {
+	public Object getCellValue(String colName) throws Exception {
 		return getCellValue(colName, true);
 	}
 
-	public String getCellValue(String colName, boolean check) throws Exception {
+	public Object getCellValue(String colName, boolean check) throws Exception {
 		Integer index = colMap.get(formatColName(colName));
 		Cell xssfCell = index != null ? row.getCell(index) : null;
 		if (xssfCell == null) {
@@ -125,12 +129,31 @@ public class SimpleNormalExcelReader implements IExcelReader {
 		return getValue(xssfCell);
 	}
 
-	private String getValue(Cell hssfCell) {
+	private Object getValue(Cell hssfCell) {
 		if (hssfCell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
 			return String.valueOf(hssfCell.getBooleanCellValue());
 		} else if (hssfCell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
-			return String.valueOf(hssfCell.getNumericCellValue());
-		} else {
+		    if (HSSFDateUtil.isCellDateFormatted(hssfCell)) {
+                return HSSFDateUtil.getJavaDate(hssfCell.getNumericCellValue());
+            }
+		    try{
+		        return new BigDecimal(hssfCell.getNumericCellValue()).setScale(12, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
+		    }catch (Exception e) {
+		        return String.valueOf(hssfCell.getNumericCellValue());
+            }
+		} else if (hssfCell.getCellType() == Cell.CELL_TYPE_FORMULA) {
+		    String value;
+            try {
+                value = hssfCell.getStringCellValue();
+            } catch (IllegalStateException e) {
+                try {
+                    value = String.valueOf(new BigDecimal(hssfCell.getNumericCellValue()).setScale(12, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString());
+                } catch (Exception e2) {
+                    value = String.valueOf(hssfCell.getNumericCellValue());
+                }
+            }
+            return value;
+        }else {
 			return String.valueOf(hssfCell.getStringCellValue());
 		}
 	}
@@ -161,11 +184,11 @@ public class SimpleNormalExcelReader implements IExcelReader {
 
 	@Override
 	public boolean readerHeaders(String... headerNames) throws Exception {
-		while(readerHeaders()) {
-			if(isNowRowContainsTheHeaders(headerNames)) {
-				return true;
-			}
-		}
-		return false;
+	    for(int i=0;i<10&&readerHeaders();i++){
+            if(isNowRowContainsTheHeaders(headerNames)) {
+                return true;
+            }
+        }
+        return false;
 	}
 }

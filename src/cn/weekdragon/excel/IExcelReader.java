@@ -9,7 +9,7 @@ public interface IExcelReader {
 
 	public boolean readerHeaders() throws Exception;
 
-	public String getCellValue(String colName, boolean check) throws Exception;
+	public Object getCellValue(String colName, boolean check) throws Exception;
 
 	public void close() throws IOException;
 	
